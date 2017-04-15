@@ -14,6 +14,7 @@ var DataType;
     DataType[DataType["Mobile"] = 1] = "Mobile";
     DataType[DataType["Required"] = 2] = "Required";
     DataType[DataType["Url"] = 3] = "Url";
+    DataType[DataType["Number"] = 4] = "Number";
 })(DataType || (DataType = {}));
 var Helper = (function () {
     function Helper() {
@@ -22,6 +23,8 @@ var Helper = (function () {
             switch (error.toLowerCase()) {
                 case 'email': return DataType.Email;
                 case 'mobile': return DataType.Mobile;
+                case 'url': return DataType.Url;
+                case 'number': return DataType.Number;
             }
         };
         /**
@@ -33,7 +36,7 @@ var Helper = (function () {
          */
         this.getErrorMsg = function (errorType) {
             var ErrorMessage = null;
-            this.Errors.array.forEach(function (item) {
+            this.Errors.forEach(function (item) {
                 if (item.Type == errorType) {
                     ErrorMessage = item.ErrorMsg;
                 }
@@ -43,9 +46,12 @@ var Helper = (function () {
             }
             return ErrorMessage;
         };
-        this.getDefaultErrorMsg = function (errorType) {
+        this.getDefaultErrorMsg = function (type) {
             var Msg;
-            switch (errorType) {
+            switch (type) {
+                case DataType.Number:
+                    Msg = "Value should contains only digits";
+                    break;
                 case DataType.Required:
                     Msg = "Required Field";
                     break;
@@ -73,36 +79,69 @@ var Helper = (function () {
                 }
             });
             if (ErrorOccured == null) {
-                ErrorOccured = That.validateData(value, { Type: type });
+                ErrorOccured = That.validateData(value, { Type: type }, true);
             }
             return ErrorOccured;
         };
-        this.validateData = function (value, error) {
-            if (error.Regex) {
-                return error.Regex.test;
-            }
-            else if (error.Code) {
-                return error.Code();
-            }
-            else if (error.MinLength) {
-                return value.length >= error.MinLength;
-            }
-            else if (error.MaxLength) {
-                return value.length <= error.MaxLength;
+        this.validateData = function (value, error, isDefined) {
+            if (isDefined === void 0) { isDefined = false; }
+            var That = this, Result = {}, ExecuteDefault = function () {
+                switch (error.Type) {
+                    case DataType.Number:
+                        return { Error: !isNaN(value), Message: That.getDefaultErrorMsg(error.Type) };
+                    case DataType.Email:
+                        var Regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                        return { Error: Regex.test(value), Message: "Invalid Email" };
+                    case DataType.Mobile:
+                        var Regex = /^[789]\d{9}$/;
+                        return { Error: Regex.test(value), Message: That.getDefaultErrorMsg(error.Type) };
+                    case DataType.Url:
+                        var Regex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
+                        return { Error: Regex.test(value), Message: That.getDefaultErrorMsg(error.Type) };
+                }
+            };
+            if (!isDefined) {
+                return ExecuteDefault();
             }
             else {
-                switch (error.Type) {
-                    case DataType.Email:
-                        error.Regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-                        break;
-                    case DataType.Mobile:
-                        error.Regex = /^[789]\d{9}$/;
-                        break;
-                    case DataType.Url:
-                        error.Regex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
-                        break;
+                //if regex exist
+                if (error.Regex) {
+                    return { Error: error.Regex.test(value), Message: That.getDefaultErrorMsg(error.Type) };
                 }
-                return error.Regex.test;
+                //if code exist
+                if (error.Code) {
+                    return { Error: error.Code(), Message: That.getDefaultErrorMsg(error.Type) };
+                }
+                //MinMax Check
+                if (error.MinMax) {
+                    return {
+                        Error: (value.length >= error.MinMax.Min) && (value.length <= error.MinMax.Max),
+                        Message: error.MinMax.Msg == undefined ? "The length of Value should be between " + error.MinMax.Min.toString() + "and " + error.MinMax.Max.toString() : error.MinMax.Msg
+                    };
+                }
+                //Min check
+                if (error.Min) {
+                    return {
+                        Error: value.length >= error.Min.Length,
+                        Message: "Minimum length should be " + error.Min.Length.toString()
+                    };
+                }
+                // Max check
+                if (error.Max) {
+                    return {
+                        Error: value.length <= error.Max.Length,
+                        Message: "Maximum length should be " + error.Max.Length.toString()
+                    };
+                }
+                // Equal To check
+                if (error.Equal) {
+                    return {
+                        Error: value === error.Equal.To,
+                        Message: error.Equal.Msg == undefined ? "invalid value" : error.Equal.Msg
+                    };
+                }
+                //Default Execution
+                return ExecuteDefault();
             }
         };
     }
@@ -119,17 +158,15 @@ var JsValidator = (function (_super) {
          *
          * @memberOf JsValidator
          */
-        _this.validate = function (value, error, isReq) {
-            if (isReq === void 0) { isReq = true; }
-            if (isReq) {
+        _this.validate = function (value, error) {
+            (error == undefined || error.IsRequired == undefined) ? true : error.IsRequired;
+            if ((error == undefined || error.IsRequired) && value.length == 0) {
                 return {
                     Error: true, Message: this.getErrorMsg(DataType.Required)
                 };
             }
             if (error != null) {
-                return {
-                    Error: this.isValid(value, this.getErrorType(error)), Message: this.getErrorMsg(error.Type)
-                };
+                return this.isValid(value, this.getErrorType(error.Type));
             }
         };
         /**
