@@ -87,8 +87,8 @@ class Helper {
      * 
      * @memberOf Helper
      */
-    protected isValid = function (value, type): IOutResult {
-        var ErrorOccured: IOutResult, That = this;
+    protected isValid = function (value, type): boolean {
+        var ErrorOccured: boolean, That = this;
         this.Errors.forEach(function (item) {
             if (type = item.Type) {
                 ErrorOccured = That.validateData(value, item);
@@ -100,72 +100,74 @@ class Helper {
         return ErrorOccured;
     }
 
-    private validateData = function (value, error: IError, isDefined = false): IOutResult {
-        var That: Helper = this, Result = <IOutResult>{},
-            ExecuteDefault = function () {
-                switch (error.Type) {
-                    case DataType.Number:
-                        return <IOutResult>{ Error: !isNaN(value), Message: That.getDefaultErrorMsg(error.Type) }
-                    case DataType.Email:
-                        var Regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-                        return <IOutResult>{ Error: Regex.test(value), Message: "Invalid Email" }
-                    case DataType.Mobile:
-                        var Regex = /^[789]\d{9}$/;
-                        return <IOutResult>{ Error: Regex.test(value), Message: That.getDefaultErrorMsg(error.Type) }
-                    case DataType.Url:
-                        var Regex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
-                        return <IOutResult>{ Error: Regex.test(value), Message: That.getDefaultErrorMsg(error.Type) }
-                }
-            };
+    private validateData = function (value, error: IError, isDefined = false): boolean {
+
+        var That = this, ErrorOccured = false, ExecuteDefault = function () {
+            switch (error.Type) {
+                case DataType.Number:
+                    That.ErrMsg = That.getDefaultErrorMsg(error.Type);
+                    return isNaN(value);
+                case DataType.Email:
+                    That.ErrMsg = That.getDefaultErrorMsg(error.Type);
+                    var Regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                    return Regex.test(value);
+                case DataType.Mobile:
+                    That.ErrMsg = That.getDefaultErrorMsg(error.Type);
+                    var Regex = /^[789]\d{9}$/;
+                    return Regex.test(value);
+                case DataType.Url:
+                    That.ErrMsg = That.getDefaultErrorMsg(error.Type);
+                    var Regex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
+                    return Regex.test(value);
+            }
+        };
         if (!isDefined) {
-            return ExecuteDefault();
+            ErrorOccured = ExecuteDefault();
         }
         else {
             //if regex exist
             if (error.Regex) {
-                return <IOutResult>{ Error: error.Regex.test(value), Message: That.getDefaultErrorMsg(error.Type) }
+                this.ErrMsg = this.getDefaultErrorMsg(error.Type);
+                ErrorOccured = error.Regex.test(value);
             }
             //if code exist
-            if (error.Code) {
-                return <IOutResult>{ Error: error.Code(), Message: That.getDefaultErrorMsg(error.Type) }
+            if (!ErrorOccured && error.Code) {
+                this.ErrMsg = this.getDefaultErrorMsg(error.Type);
+                ErrorOccured = error.Code();
             }
             //MinMax Check
-            if (error.MinMax) {
-                return <IOutResult>{
-                    Error: (value.length >= error.MinMax.Min) && (value.length <= error.MinMax.Max),
-                    Message: error.MinMax.Msg == undefined ? "The length of Value should be between " + error.MinMax.Min.toString() + "and " + error.MinMax.Max.toString() : error.MinMax.Msg
+            if (!ErrorOccured) {
+                if (error.MinMax) {  //MinMax
+                    this.ErrMsg = error.MinMax.Msg == undefined ? "The length of Value should be between " + error.MinMax.Min.toString() + "and " + error.MinMax.Max.toString() : error.MinMax.Msg;
+                    ErrorOccured = (value.length >= error.MinMax.Min) && (value.length <= error.MinMax.Max);
                 }
-            }
-            //Min check
-            if (error.Min) {
-                return <IOutResult>{
-                    Error: value.length >= error.Min.Length,
-                    Message: "Minimum length should be " + error.Min.Length.toString()
+                else if (error.Min) { //Min
+                    this.ErrMsg = "Minimum length should be " + error.Min.Length.toString();
+                    ErrorOccured = value.length >= error.Min.Length;
                 }
-            }
-            // Max check
-            if (error.Max) {
-                return <IOutResult>{
-                    Error: value.length <= error.Max.Length,
-                    Message: "Maximum length should be " + error.Max.Length.toString()
+                else if (error.Max) { //Min
+                    this.ErrMsg = "Maximum length should be " + error.Max.Length.toString();
+                    ErrorOccured = value.length <= error.Max.Length;
                 }
             }
             // Equal To check
-            if (error.Equal) {
-                return <IOutResult>{
-                    Error: value === error.Equal.To,
-                    Message: error.Equal.Msg == undefined ? "invalid value" : error.Equal.Msg
-                }
+            if (!ErrorOccured && error.Equal) {
+                this.ErrMsg = error.Equal.Msg == undefined ? "invalid value" : error.Equal.Msg;
+                ErrorOccured = value === error.Equal.To;
             }
 
             //Default Execution
-            return ExecuteDefault();
+            if (!ErrorOccured) {
+                ErrorOccured = ExecuteDefault();
+            }
         }
-
+        return ErrorOccured;
     }
 }
 
 class JsValidator extends Helper {
+    ErrMsg: string;
+    
     constructor(errors: Array<IError> = []) {
         super();
         var That = this;
@@ -181,16 +183,16 @@ class JsValidator extends Helper {
      * 
      * @memberOf JsValidator
      */
-    validate = function (value, error: IError): IOutResult {
-        (error == undefined || error.IsRequired == undefined) ? true : error.IsRequired;
-        if ((error == undefined || error.IsRequired) && value.length == 0) {
-            return <IOutResult>{
-                Error: true, Message: this.getErrorMsg(DataType.Required)
-            };
+    validate = function (value, error: IError): boolean {
+        this.ErrMsg = "";
+        if ((error == undefined || error.IsRequired == undefined ? true : error.IsRequired) && value.length == 0) {
+            this.ErrMsg = this.getErrorMsg(DataType.Required);
+            return true;
         }
-        if (error != null) {
+        if (!this.Error && error != null) {
             return this.isValid(value, this.getErrorType(error.Type));
         }
+
     };
 
     /**

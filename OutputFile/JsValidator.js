@@ -85,64 +85,65 @@ var Helper = (function () {
         };
         this.validateData = function (value, error, isDefined) {
             if (isDefined === void 0) { isDefined = false; }
-            var That = this, Result = {}, ExecuteDefault = function () {
+            var That = this, ErrorOccured = false, ExecuteDefault = function () {
                 switch (error.Type) {
                     case DataType.Number:
-                        return { Error: !isNaN(value), Message: That.getDefaultErrorMsg(error.Type) };
+                        That.ErrMsg = That.getDefaultErrorMsg(error.Type);
+                        return isNaN(value);
                     case DataType.Email:
+                        That.ErrMsg = That.getDefaultErrorMsg(error.Type);
                         var Regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-                        return { Error: Regex.test(value), Message: "Invalid Email" };
+                        return Regex.test(value);
                     case DataType.Mobile:
+                        That.ErrMsg = That.getDefaultErrorMsg(error.Type);
                         var Regex = /^[789]\d{9}$/;
-                        return { Error: Regex.test(value), Message: That.getDefaultErrorMsg(error.Type) };
+                        return Regex.test(value);
                     case DataType.Url:
+                        That.ErrMsg = That.getDefaultErrorMsg(error.Type);
                         var Regex = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
-                        return { Error: Regex.test(value), Message: That.getDefaultErrorMsg(error.Type) };
+                        return Regex.test(value);
                 }
             };
             if (!isDefined) {
-                return ExecuteDefault();
+                ErrorOccured = ExecuteDefault();
             }
             else {
                 //if regex exist
                 if (error.Regex) {
-                    return { Error: error.Regex.test(value), Message: That.getDefaultErrorMsg(error.Type) };
+                    this.ErrMsg = this.getDefaultErrorMsg(error.Type);
+                    ErrorOccured = error.Regex.test(value);
                 }
                 //if code exist
-                if (error.Code) {
-                    return { Error: error.Code(), Message: That.getDefaultErrorMsg(error.Type) };
+                if (!ErrorOccured && error.Code) {
+                    this.ErrMsg = this.getDefaultErrorMsg(error.Type);
+                    ErrorOccured = error.Code();
                 }
                 //MinMax Check
-                if (error.MinMax) {
-                    return {
-                        Error: (value.length >= error.MinMax.Min) && (value.length <= error.MinMax.Max),
-                        Message: error.MinMax.Msg == undefined ? "The length of Value should be between " + error.MinMax.Min.toString() + "and " + error.MinMax.Max.toString() : error.MinMax.Msg
-                    };
-                }
-                //Min check
-                if (error.Min) {
-                    return {
-                        Error: value.length >= error.Min.Length,
-                        Message: "Minimum length should be " + error.Min.Length.toString()
-                    };
-                }
-                // Max check
-                if (error.Max) {
-                    return {
-                        Error: value.length <= error.Max.Length,
-                        Message: "Maximum length should be " + error.Max.Length.toString()
-                    };
+                if (!ErrorOccured) {
+                    if (error.MinMax) {
+                        this.ErrMsg = error.MinMax.Msg == undefined ? "The length of Value should be between " + error.MinMax.Min.toString() + "and " + error.MinMax.Max.toString() : error.MinMax.Msg;
+                        ErrorOccured = (value.length >= error.MinMax.Min) && (value.length <= error.MinMax.Max);
+                    }
+                    else if (error.Min) {
+                        this.ErrMsg = "Minimum length should be " + error.Min.Length.toString();
+                        ErrorOccured = value.length >= error.Min.Length;
+                    }
+                    else if (error.Max) {
+                        this.ErrMsg = "Maximum length should be " + error.Max.Length.toString();
+                        ErrorOccured = value.length <= error.Max.Length;
+                    }
                 }
                 // Equal To check
-                if (error.Equal) {
-                    return {
-                        Error: value === error.Equal.To,
-                        Message: error.Equal.Msg == undefined ? "invalid value" : error.Equal.Msg
-                    };
+                if (!ErrorOccured && error.Equal) {
+                    this.ErrMsg = error.Equal.Msg == undefined ? "invalid value" : error.Equal.Msg;
+                    ErrorOccured = value === error.Equal.To;
                 }
                 //Default Execution
-                return ExecuteDefault();
+                if (!ErrorOccured) {
+                    ErrorOccured = ExecuteDefault();
+                }
             }
+            return ErrorOccured;
         };
     }
     return Helper;
@@ -159,13 +160,12 @@ var JsValidator = (function (_super) {
          * @memberOf JsValidator
          */
         _this.validate = function (value, error) {
-            (error == undefined || error.IsRequired == undefined) ? true : error.IsRequired;
-            if ((error == undefined || error.IsRequired) && value.length == 0) {
-                return {
-                    Error: true, Message: this.getErrorMsg(DataType.Required)
-                };
+            this.ErrMsg = "";
+            if ((error == undefined || error.IsRequired == undefined ? true : error.IsRequired) && value.length == 0) {
+                this.ErrMsg = this.getErrorMsg(DataType.Required);
+                return true;
             }
-            if (error != null) {
+            if (!this.Error && error != null) {
                 return this.isValid(value, this.getErrorType(error.Type));
             }
         };
