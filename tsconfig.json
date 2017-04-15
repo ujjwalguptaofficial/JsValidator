@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "noImplicitAny": false,
+        "noEmitOnError": true,
+        "removeComments": false,
+        "sourceMap": true,
+        "inlineSources": true,
+        "out": "outputfile/JsValidator.js",
+        "target": "es5",
+        "preserveConstEnums": true
+    }
+}
