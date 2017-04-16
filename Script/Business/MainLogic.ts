@@ -91,7 +91,7 @@ class Helper {
             }
         }
         if (error.Is.Required) {
-            this.ErrMsg = error.ErrorMsg == undefined ? "Required field" : error.ErrorMsg;
+            this.ErrMsg = error.Is.Msg == undefined ? "Required field" : error.Is.Msg;
             ErrorOccured = value.toString().length == 0 ? true : false;
         }
         //if regex exist
