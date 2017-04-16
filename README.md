@@ -88,7 +88,7 @@ var Validator=new JsValidator(
         },
         {
             Type:'UsMobile', // this is for adding your own logic
-            Code:function()
+            Code:function(value)
             {
                 //any code but return true or false
             }

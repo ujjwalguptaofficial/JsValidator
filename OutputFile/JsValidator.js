@@ -83,7 +83,7 @@ var Helper = (function () {
             //if code exist
             if (!ErrorOccured && error.Code) {
                 this.ErrMsg = error.ErrorMsg;
-                ErrorOccured = error.Code();
+                ErrorOccured = error.Code(value);
             }
             //MinMax Check
             if (!ErrorOccured) {
