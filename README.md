@@ -1,11 +1,11 @@
 # JsValidator
 
-#How to use 
+# How to use 
 1. download the file
 2. find the script under output folder
 3. include it in your html file
 
-#Doc
+# Doc
 
 ## Check for null
 ```
@@ -17,7 +17,7 @@ if(Validator.validate(Name.value)) // return true if error otherwise false
 }
 
 ```
-## check for different datatype -  email,url,mobile,number
+## Check for different datatype -  email, url, mobile, number
 ```
 var Validator=new JsValidator();
 var Price=document.getElementById('txtPrice');
@@ -37,17 +37,58 @@ if(Validator.validate(Price.value,{ Type:'email'})) // return true if error othe
 //###Note :- the mobile no check is for indian no only. So in the case if something is not working for you - you can define the custom check
 
 ```
-###Note :- currently we support following datatype -
+### Note :- currently we support following datatype -
 1.Email
 2.Url
 3.Mobile
 4.Number
 
-## Custom Check
-'''
-var Validator=new JsValidator();
-var Price=document.getElementById('txtMob');
+## Define Custom Check
 
+### Using Constructor
+```
+var Validator=new JsValidator(
+    [
+        {
+            Type:'email',
+            Regex:/^((ht|f)tp(s?)\:\/\/|~/|/)?([\w]+:\w+@)?([a-zA-Z]{1}([\w\-]+\.)+([\w]{2,5}))(:[\d]{1,5})?((/?\w+/)+|/?)(\w+\.[\w]{3,4})?((\?\w+=\w+)?(&\w+=\w+)*)?/,
+            ErrorMsg:'Enter valid email',
+            IsRequired:true
+        },
+        {
+            Type:'Mobile',
+            Code:function()
+            {
+                if(isNan(value))
+                {
+                    return true;
+                }
+                else if(value.toString().length<10)
+                {
+                    return true;
+                }
+                return false;
+            },
+            ErrorMsg:'Enter valid number',
+            IsRequired:false
+        }
+    ]
+);
+
+// you can define both constraints like Code and Regex - if regex will return false then Code will be executed
+
+```
+### Using 'setErrorDef' - you can define error at any time using this method
+
+```
+Validator.setErrorDef({
+            Type:'email',
+            Regex:/^((ht|f)tp(s?)\:\/\/|~/|/)?([\w]+:\w+@)?([a-zA-Z]{1}([\w\-]+\.)+([\w]{2,5}))(:[\d]{1,5})?((/?\w+/)+|/?)(\w+\.[\w]{3,4})?((\?\w+=\w+)?(&\w+=\w+)*)?/,
+            ErrorMsg:'Enter valid email',
+            IsRequired:false
+        });
+
+```
 
 ## Check for Min or Max length
 ```
