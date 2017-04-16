@@ -54,7 +54,7 @@ var Validator=new JsValidator(
             Type:'email',
             Regex:/^((ht|f)tp(s?)\:\/\/|~/|/)?([\w]+:\w+@)?([a-zA-Z]{1}([\w\-]+\.)+([\w]{2,5}))(:[\d]{1,5})?((/?\w+/)+|/?)(\w+\.[\w]{3,4})?((\?\w+=\w+)?(&\w+=\w+)*)?/,
             ErrorMsg:'Enter valid email',
-            IsRequired:true
+            Is:{Required:true,Msg:"This field is required"}
         },
         {
             Type:'Mobile',
@@ -71,7 +71,7 @@ var Validator=new JsValidator(
                 return false;
             },
             ErrorMsg:'Enter valid number',
-            IsRequired:false
+            Is:{Required:false}
         },
         {
             Type:'UsMobile',
@@ -93,7 +93,7 @@ Validator.setErrorDef({
             Type:'email',
             Regex:/^((ht|f)tp(s?)\:\/\/|~/|/)?([\w]+:\w+@)?([a-zA-Z]{1}([\w\-]+\.)+([\w]{2,5}))(:[\d]{1,5})?((/?\w+/)+|/?)(\w+\.[\w]{3,4})?((\?\w+=\w+)?(&\w+=\w+)*)?/,
             ErrorMsg:'Enter valid email',
-            IsRequired:false
+            Is:{Required:false}
         });
 
 ```
