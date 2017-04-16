@@ -34,14 +34,14 @@ if(Validator.validate(Price.value,{ Type:'email'})) // return true if error othe
     alert(Validator.ErrMsg); // Validator.ErrMsg will contains the current Error Message
 }
 
-//###Note :- the mobile no check is for indian no only. So in the case if something is not working for you - you can define the custom check
+//### Note :- the mobile no check is for indian no only. So in the case if something is not working for you - you can define the custom check
 
 ```
 ### Note :- currently we support following datatype -
-1.Email
-2.Url
-3.Mobile
-4.Number
+1. Email
+2. Url
+3. Mobile
+4. Number
 
 ## Define Custom Check
 
@@ -112,6 +112,19 @@ if(Validator.validate(Price.value,{ Type:'number',Max:{Length:3}}))
 if(Validator.validate(Price.value,{ Type:'number',MinMax:{Min:3,Max:5}}))
 {
     alert(Validator.ErrMsg); // Validator.ErrMsg will contains the current Error Message
+}
+
+```
+## Check for Equal to
+
+```
+var Validator=new JsValidator(),
+Pwd=document.getElementById('txtPwd'),
+CPwd=document.getElementById('txtCPwd');
+
+if(Validator.validate(CPwd.value,{Equal:{ To:Pwd.value,Msg:"Confirm Pwd does not matches with Pwd" } })
+{
+   alert(Validator.ErrMsg);
 }
 
 ```
