@@ -34,7 +34,8 @@ if(Validator.validate(Price.value,{ Type:'email'})) // return true if error othe
     alert(Validator.ErrMsg); // Validator.ErrMsg will contains the current Error Message
 }
 
-//### Note :- the mobile no check is for indian no only. So in the case if something is not working for you - you can define the custom check
+//Note :- the mobile no check is for indian no only. So in the case if something is not working for you - 
+// you can override the validation logic or create your own.
 
 ```
 ### Note :- currently we support following datatype -
@@ -43,7 +44,7 @@ if(Validator.validate(Price.value,{ Type:'email'})) // return true if error othe
 3. Mobile
 4. Number
 
-## Define Custom Check
+## OverRide validation logic or add your own
 
 ### Using Constructor
 ```
@@ -71,11 +72,18 @@ var Validator=new JsValidator(
             },
             ErrorMsg:'Enter valid number',
             IsRequired:false
+        },
+        {
+            Type:'UsMobile',
+            Code:function()
+            {
+                //any code but return true or false
+            }
         }
     ]
 );
 
-// you can define both constraints like Code and Regex - if regex will return false then Code will be executed
+// you can define both constraints like Code and Regex - if regex will return false then Code will be executed.
 
 ```
 ### Using 'setErrorDef' - you can define error at any time using this method
