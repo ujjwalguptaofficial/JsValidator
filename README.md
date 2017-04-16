@@ -17,6 +17,19 @@ if(Validator.validate(Name.value)) // return true if error otherwise false
 }
 
 ```
+
+##Check for null with custom message
+
+```
+var Validator=new JsValidator();
+var Name=document.getElementById('txtName');
+if(Validator.validate(Name.value,{Is:{Required:true,Msg:"This is required value"}})) 
+{
+    alert(Validator.ErrMsg); 
+}
+
+```
+
 ## Check for different datatype -  email, url, mobile, number
 ```
 var Validator=new JsValidator();
