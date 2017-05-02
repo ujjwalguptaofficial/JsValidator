@@ -26,6 +26,8 @@ interface IOutResult {
 }
 
 class Helper {
+
+    IsAnyError = false;
     Errors: Array<IError> = [
 
         <IError>{
@@ -82,14 +84,34 @@ class Helper {
      * 
      * @memberOf Helper
      */
-    protected isValid = function (value, error: IError): boolean {
+    protected isError = function (value, error: IError): boolean {
+
         var ErrorOccured = false;
+        this.ErrMsg = "";
+
+        //checking error status
+        if (error == undefined) {
+            error = <IError>{
+                Is: {
+                    Required: true
+                }
+            };
+        }
+        else if (error.Is == undefined || error.Is.Required == undefined) {
+            error["Is"] = <any>{
+                Required: true
+            }
+        }
+
+        //fetching error property
         if (error.Type != undefined) {
             var ErrorDef = this.selectError(error.Type);
             for (var property in ErrorDef) {
                 error[property] = error[property] == null ? ErrorDef[property] : error[property];
             }
         }
+
+        //validation start
         if (error.Is.Required) {
             this.ErrMsg = error.Is.Msg == undefined ? "Required field" : error.Is.Msg;
             ErrorOccured = value.toString().length == 0 ? true : false;
@@ -97,7 +119,7 @@ class Helper {
         //if regex exist
         if (!ErrorOccured && error.Regex) {
             this.ErrMsg = error.ErrorMsg;
-            ErrorOccured = error.Regex.test(value);
+            ErrorOccured = !error.Regex.test(value);
         }
         //if code exist
         if (!ErrorOccured && error.Code) {
@@ -123,6 +145,9 @@ class Helper {
         if (!ErrorOccured && error.Equal) {
             this.ErrMsg = error.Equal.Msg == undefined ? "invalid value" : error.Equal.Msg;
             ErrorOccured = (value === error.Equal.To);
+        }
+        if (!this.IsAnyError && ErrorOccured) {
+            this.IsAnyError = ErrorOccured;
         }
         return ErrorOccured;
     }
@@ -181,32 +206,41 @@ class JsValidator extends Helper {
      * 
      * @memberOf JsValidator
      */
-    validate = function (value, error: IError): boolean {
-        this.ErrMsg = "";
-        // if ((error == undefined || error.Is == undefined || error.Is.Required == undefined ? true : error.Is.Required) && value.length == 0) {
-        //     if (error == undefined) {
-        //         this.ErrMsg = (error == undefined || error.Is == undefined || error.Is.Msg == undefined) ? this.getErrorMsg((error == undefined || error.Type == undefined) ? "required" : error.Type) : error.Is.Msg;
-        //     }
-        //     else {
-        //         this.ErrMsg = (error == undefined || error.Is == undefined || error.Is.Msg == undefined) ? this.getErrorMsg((error == undefined || error.Type == undefined) ? "required" : error.Type) : error.Is.Msg;
-        //     }
-        //     return true;
+    isInvalid = function (value, error: IError): boolean {
+        // this.ErrMsg = "";
+        // if (error == undefined) {
+        //     return this.isError(value, <IError>{
+        //         Is: {
+        //             Required: true
+        //         }
+        //     });
         // }
+        // else if (error.Is == undefined || error.Is.Required == undefined) {
+        //     error["Is"] = <any>{
+        //         Required: true
+        //     }
+        //     return this.isError(value, error);
+        // }
+        return this.isError(value, error);
 
-        if (error == undefined) {
-            return this.isValid(value, <IError>{
-                Is: {
-                    Required: true
-                }
-            });
-        }
-        else if (error.Is == undefined || error.Is.Required == undefined) {
-            error["Is"] = <any>{
-                Required: true
-            }
-            return this.isValid(value, error);
-        }
-        return this.isValid(value, error);
+    };
+
+    isValid = function (value, error: IError): boolean {
+        // this.ErrMsg = "";
+        // if (error == undefined) {
+        //     return !this.isError(value, <IError>{
+        //         Is: {
+        //             Required: true
+        //         }
+        //     });
+        // }
+        // else if (error.Is == undefined || error.Is.Required == undefined) {
+        //     error["Is"] = <any>{
+        //         Required: true
+        //     }
+        //     return !this.isError(value, error);
+        // }
+        return !this.isError(value, error);
 
     };
 
@@ -224,6 +258,10 @@ class JsValidator extends Helper {
         else {
             this.Errors.push(error);
         }
+    }
+
+    startValidation = function () {
+        this.IsAnyError = false;
     }
 
 }
